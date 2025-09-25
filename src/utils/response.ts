@@ -95,7 +95,7 @@ export class ResponseHandler {
           message: error.message,
           code: error.code,
           statusCode: error.statusCode,
-          details: error.details,
+          details: error.details as Record<string, unknown>,
         },
         timestamp: new Date().toISOString(),
       };

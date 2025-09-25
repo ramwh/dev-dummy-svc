@@ -2,7 +2,14 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { UserService } from './service';
 import { ResponseHandler } from '@/utils/response';
 import { ValidationError } from '@/utils/errors';
-import { CreateUserInput, UpdateUserInput, UserFilters, PaginationParams } from './types';
+import {
+  CreateUserInput,
+  UpdateUserInput,
+  UserFilters,
+  PaginationParams,
+  UserIdParams,
+  GetUsersQuery,
+} from './types';
 import {
   createUserSchema,
   updateUserSchema,
@@ -12,7 +19,10 @@ import {
 import { loggers } from '@/utils/logger';
 
 export class UserController {
-  static async create(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  static async create(
+    request: FastifyRequest<{ Body: CreateUserInput }>,
+    reply: FastifyReply
+  ): Promise<FastifyReply> {
     try {
       // Validate request body
       const { error, value } = createUserSchema.validate(request.body);
@@ -34,7 +44,10 @@ export class UserController {
     }
   }
 
-  static async getById(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  static async getById(
+    request: FastifyRequest<{ Params: UserIdParams }>,
+    reply: FastifyReply
+  ): Promise<FastifyReply> {
     try {
       // Validate request params
       const { error, value } = userIdParamSchema.validate(request.params);
@@ -45,7 +58,7 @@ export class UserController {
         });
       }
 
-      const { id } = value as { id: number };
+      const { id } = value as UserIdParams;
       const user = await UserService.findById(id);
 
       if (!user) {
@@ -58,7 +71,10 @@ export class UserController {
     }
   }
 
-  static async getMany(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  static async getMany(
+    request: FastifyRequest<{ Querystring: GetUsersQuery }>,
+    reply: FastifyReply
+  ): Promise<FastifyReply> {
     try {
       // Validate query parameters
       const { error, value } = getUsersQuerySchema.validate(request.query);
@@ -97,7 +113,10 @@ export class UserController {
     }
   }
 
-  static async update(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  static async update(
+    request: FastifyRequest<{ Params: UserIdParams; Body: UpdateUserInput }>,
+    reply: FastifyReply
+  ): Promise<FastifyReply> {
     try {
       // Validate request params
       const { error: paramError, value: paramValue } = userIdParamSchema.validate(request.params);
@@ -117,7 +136,7 @@ export class UserController {
         });
       }
 
-      const { id } = paramValue as { id: number };
+      const { id } = paramValue as UserIdParams;
       const input = bodyValue as UpdateUserInput;
 
       const user = await UserService.update(id, input);
@@ -130,7 +149,10 @@ export class UserController {
     }
   }
 
-  static async delete(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  static async delete(
+    request: FastifyRequest<{ Params: UserIdParams }>,
+    reply: FastifyReply
+  ): Promise<FastifyReply> {
     try {
       // Validate request params
       const { error, value } = userIdParamSchema.validate(request.params);
@@ -141,7 +163,7 @@ export class UserController {
         });
       }
 
-      const { id } = value as { id: number };
+      const { id } = value as UserIdParams;
       await UserService.delete(id);
 
       loggers.http.info({ userId: id }, 'User deleted via API');
