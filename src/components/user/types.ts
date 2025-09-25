@@ -2,7 +2,7 @@ export interface User {
   id: number;
   email: string;
   name: string;
-  age?: number | undefined;
+  age?: number;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
