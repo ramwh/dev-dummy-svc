@@ -104,9 +104,6 @@ export class UserService {
       }
 
       const row = rows[0];
-      if (!row) {
-        return null;
-      }
       return this.mapRowToUser(row);
     } catch (error) {
       loggers.user.error({ email, error }, 'Failed to find user by email');
