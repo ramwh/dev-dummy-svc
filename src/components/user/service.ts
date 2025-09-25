@@ -77,7 +77,7 @@ export class UserService {
         return null;
       }
 
-      const user = this.mapRowToUser(rows[0]!);
+      const user = this.mapRowToUser(rows[0]);
 
       // Cache the user
       await this.cacheUser(user);
