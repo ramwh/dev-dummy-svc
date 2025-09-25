@@ -15,7 +15,7 @@ export interface ErrorResponse {
     message: string;
     code: string;
     statusCode: number;
-    details?: unknown;
+    details?: Record<string, unknown>;
   };
   timestamp: string;
 }
