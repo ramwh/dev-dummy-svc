@@ -15,7 +15,7 @@ import {
   updateUserSchema,
   getUsersQuerySchema,
   userIdParamSchema,
-} from './validation';
+} from './schema';
 import { loggers } from '@/utils/logger';
 
 export class UserController {
@@ -38,7 +38,7 @@ export class UserController {
 
       loggers.http.info({ userId: user.id, userEmail: user.email }, 'User created via API');
 
-      return ResponseHandler.created(reply, user, 'User created successfully');
+      return ResponseHandler.ok(reply, user, 'User created successfully', 201);
     } catch (error) {
       return ResponseHandler.error(reply, error as Error);
     }
@@ -62,10 +62,10 @@ export class UserController {
       const user = await UserService.findById(id);
 
       if (!user) {
-        return ResponseHandler.error(reply, new Error('User not found'), 404);
+        return ResponseHandler.fail(reply, 'User not found', 404);
       }
 
-      return ResponseHandler.success(reply, user, 'User retrieved successfully');
+      return ResponseHandler.ok(reply, user, 'User retrieved successfully');
     } catch (error) {
       return ResponseHandler.error(reply, error as Error);
     }
@@ -143,7 +143,7 @@ export class UserController {
 
       loggers.http.info({ userId: id, updates: input }, 'User updated via API');
 
-      return ResponseHandler.success(reply, user, 'User updated successfully');
+      return ResponseHandler.ok(reply, user, 'User updated successfully');
     } catch (error) {
       return ResponseHandler.error(reply, error as Error);
     }

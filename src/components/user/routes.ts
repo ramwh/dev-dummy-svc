@@ -1,11 +1,11 @@
 import { FastifyInstance } from 'fastify';
 import { UserController } from './controller';
 import {
-  createUserSchema,
-  getUserByIdSchema,
-  getUsersSchema,
-  updateUserSchema,
-  deleteUserSchema,
+  createUserRequestSchema,
+  getUserByIdRequestSchema,
+  getUsersRequestSchema,
+  updateUserRequestSchema,
+  deleteUserRequestSchema,
 } from './schema';
 
 export const userRoutes = async (fastify: FastifyInstance): Promise<void> => {
@@ -18,7 +18,7 @@ export const userRoutes = async (fastify: FastifyInstance): Promise<void> => {
       tags,
       summary: 'Create a new user',
       description: 'Creates a new user with the provided information',
-      ...createUserSchema,
+      ...createUserRequestSchema,
     },
     handler: UserController.create,
   });
@@ -29,7 +29,7 @@ export const userRoutes = async (fastify: FastifyInstance): Promise<void> => {
       tags,
       summary: 'Get user by ID',
       description: 'Retrieves a user by their unique identifier',
-      ...getUserByIdSchema,
+      ...getUserByIdRequestSchema,
     },
     handler: UserController.getById,
   });
@@ -40,7 +40,7 @@ export const userRoutes = async (fastify: FastifyInstance): Promise<void> => {
       tags,
       summary: 'Get users with filtering and pagination',
       description: 'Retrieves users with optional filtering and pagination',
-      ...getUsersSchema,
+      ...getUsersRequestSchema,
     },
     handler: UserController.getMany,
   });
@@ -51,7 +51,7 @@ export const userRoutes = async (fastify: FastifyInstance): Promise<void> => {
       tags,
       summary: 'Update user',
       description: 'Updates an existing user with the provided information',
-      ...updateUserSchema,
+      ...updateUserRequestSchema,
     },
     handler: UserController.update,
   });
@@ -62,7 +62,7 @@ export const userRoutes = async (fastify: FastifyInstance): Promise<void> => {
       tags,
       summary: 'Delete user',
       description: 'Deletes an existing user',
-      ...deleteUserSchema,
+      ...deleteUserRequestSchema,
     },
     handler: UserController.delete,
   });
