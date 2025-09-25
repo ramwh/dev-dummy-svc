@@ -5,7 +5,7 @@ import { loggers } from './logger';
 export interface SuccessResponse<T = unknown> {
   success: true;
   data: T;
-  message?: string | undefined;
+  message?: string;
   timestamp: string;
 }
 
