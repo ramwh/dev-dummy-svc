@@ -151,7 +151,7 @@ export class UserService {
       // Get total count
       const countSql = `SELECT COUNT(*) as total FROM users ${whereClause}`;
       const countRows = await DatabaseConnection.query<RowDataPacket[]>(countSql, values, true);
-      const total = (countRows[0] as { total: number }).total;
+      const total = (countRows[0] as { total: number } | undefined)?.total ?? 0;
 
       // Get users with pagination
       const offset = (pagination.page - 1) * pagination.limit;
