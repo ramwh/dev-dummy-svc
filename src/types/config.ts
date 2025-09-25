@@ -18,7 +18,7 @@ export interface DatabaseConfig {
 export interface RedisConfig {
   host: string;
   port: number;
-  password?: string | undefined;
+  password?: string;
   db: number;
 }
 
