@@ -1,0 +1,224 @@
+version: '3.8'
+
+services:
+  # Application
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+      
+      # Database Configuration
+      DB_PRIMARY_HOST: mysql-primary
+      DB_PRIMARY_PORT: 3306
+      DB_PRIMARY_USER: root
+      DB_PRIMARY_PASSWORD: rootpassword
+      DB_PRIMARY_NAME: dev_dummy_svc
+      
+      DB_REPLICA_HOST: mysql-replica
+      DB_REPLICA_PORT: 3306
+      DB_REPLICA_USER: root
+      DB_REPLICA_PASSWORD: rootpassword
+      DB_REPLICA_NAME: dev_dummy_svc
+      
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      
+      # Logging
+      LOG_LEVEL: info
+      LOG_FILE_ENABLED: true
+      LOG_FILE_PATH: ./logs/app.log
+      PRETTY_LOGS: false
+      
+      # Features
+      SWAGGER_ENABLED: false
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      mysql-primary:
+        condition: service_healthy
+      mysql-replica:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Development version of the app
+  app-dev:
+    build: .
+    ports:
+      - "3001:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      HOST: 0.0.0.0
+      
+      # Database Configuration
+      DB_PRIMARY_HOST: mysql-primary
+      DB_PRIMARY_PORT: 3306
+      DB_PRIMARY_USER: root
+      DB_PRIMARY_PASSWORD: rootpassword
+      DB_PRIMARY_NAME: dev_dummy_svc
+      
+      DB_REPLICA_HOST: mysql-replica
+      DB_REPLICA_PORT: 3306
+      DB_REPLICA_USER: root
+      DB_REPLICA_PASSWORD: rootpassword
+      DB_REPLICA_NAME: dev_dummy_svc
+      
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      
+      # Logging
+      LOG_LEVEL: debug
+      LOG_FILE_ENABLED: true
+      LOG_FILE_PATH: ./logs/app.log
+      PRETTY_LOGS: true
+      
+      # Features
+      SWAGGER_ENABLED: true
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      mysql-primary:
+        condition: service_healthy
+      mysql-replica:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles:
+      - dev
+
+  # MySQL Primary (Write operations)
+  mysql-primary:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: dev_dummy_svc
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_primary_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    command: >
+      --server-id=1
+      --log-bin=mysql-bin
+      --binlog-format=ROW
+      --sync-binlog=1
+      --innodb-flush-log-at-trx-commit=1
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # MySQL Replica (Read operations)
+  mysql-replica:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: dev_dummy_svc
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_replica_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    command: >
+      --server-id=2
+      --log-bin=mysql-bin
+      --binlog-format=ROW
+      --sync-binlog=1
+      --innodb-flush-log-at-trx-commit=1
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --read-only=1
+    depends_on:
+      mysql-primary:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # phpMyAdmin for database management (development only)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    environment:
+      PMA_HOSTS: mysql-primary,mysql-replica
+      PMA_PORTS: 3306,3306
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword
+    ports:
+      - "8080:80"
+    depends_on:
+      mysql-primary:
+        condition: service_healthy
+    profiles:
+      - dev
+
+  # Redis Commander for Redis management (development only)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      redis:
+        condition: service_healthy
+    profiles:
+      - dev
+
+volumes:
+  mysql_primary_data:
+  mysql_replica_data:
+  redis_data:
+
+networks:
+  default:
+    driver: bridge
