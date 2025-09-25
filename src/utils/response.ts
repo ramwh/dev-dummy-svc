@@ -31,7 +31,25 @@ export interface PaginatedResponse<T = unknown> extends SuccessResponse<T[]> {
   };
 }
 
+// Centralized ApiResponse type for OpenAPI schemas
+export type ApiResponse<T = unknown> = SuccessResponse<T> | ErrorResponse | PaginatedResponse<T>;
+
 export class ResponseHandler {
+  // Alias for success method as required
+  static ok<T>(
+    reply: FastifyReply,
+    data: T,
+    message?: string,
+    statusCode: number = 200
+  ): FastifyReply {
+    return ResponseHandler.success(reply, data, message, statusCode);
+  }
+
+  // Alias for error method as required
+  static fail(reply: FastifyReply, message: string, statusCode: number = 400): FastifyReply {
+    return ResponseHandler.error(reply, new Error(message), statusCode);
+  }
+
   static success<T>(
     reply: FastifyReply,
     data: T,
@@ -95,7 +113,7 @@ export class ResponseHandler {
           message: error.message,
           code: error.code,
           statusCode: error.statusCode,
-          details: error.details,
+          details: error.details as Record<string, unknown>,
         },
         timestamp: new Date().toISOString(),
       };

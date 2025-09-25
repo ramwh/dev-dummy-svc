@@ -31,3 +31,44 @@ export interface PaginationParams {
   page: number;
   limit: number;
 }
+
+// Request parameter types
+export interface UserIdParams {
+  id: number;
+}
+
+export interface GetUsersQuery extends UserFilters, PaginationParams {}
+
+// Response types
+export interface UserResponse {
+  success: true;
+  data: User;
+  message?: string;
+  timestamp: string;
+}
+
+export interface UsersResponse {
+  success: true;
+  data: User[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+  message?: string;
+  timestamp: string;
+}
+
+export interface ErrorResponse {
+  success: false;
+  error: {
+    message: string;
+    code: string;
+    statusCode: number;
+    details?: Record<string, unknown>;
+  };
+  timestamp: string;
+}

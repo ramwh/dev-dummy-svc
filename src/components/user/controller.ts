@@ -2,17 +2,27 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { UserService } from './service';
 import { ResponseHandler } from '@/utils/response';
 import { ValidationError } from '@/utils/errors';
-import { CreateUserInput, UpdateUserInput, UserFilters, PaginationParams } from './types';
+import {
+  CreateUserInput,
+  UpdateUserInput,
+  UserFilters,
+  PaginationParams,
+  UserIdParams,
+  GetUsersQuery,
+} from './types';
 import {
   createUserSchema,
   updateUserSchema,
   getUsersQuerySchema,
   userIdParamSchema,
-} from './validation';
+} from './schema';
 import { loggers } from '@/utils/logger';
 
 export class UserController {
-  static async create(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  static async create(
+    request: FastifyRequest<{ Body: CreateUserInput }>,
+    reply: FastifyReply
+  ): Promise<FastifyReply> {
     try {
       // Validate request body
       const { error, value } = createUserSchema.validate(request.body);
@@ -28,13 +38,16 @@ export class UserController {
 
       loggers.http.info({ userId: user.id, userEmail: user.email }, 'User created via API');
 
-      return ResponseHandler.created(reply, user, 'User created successfully');
+      return ResponseHandler.ok(reply, user, 'User created successfully', 201);
     } catch (error) {
       return ResponseHandler.error(reply, error as Error);
     }
   }
 
-  static async getById(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  static async getById(
+    request: FastifyRequest<{ Params: UserIdParams }>,
+    reply: FastifyReply
+  ): Promise<FastifyReply> {
     try {
       // Validate request params
       const { error, value } = userIdParamSchema.validate(request.params);
@@ -45,20 +58,23 @@ export class UserController {
         });
       }
 
-      const { id } = value as { id: number };
+      const { id } = value as UserIdParams;
       const user = await UserService.findById(id);
 
       if (!user) {
-        return ResponseHandler.error(reply, new Error('User not found'), 404);
+        return ResponseHandler.fail(reply, 'User not found', 404);
       }
 
-      return ResponseHandler.success(reply, user, 'User retrieved successfully');
+      return ResponseHandler.ok(reply, user, 'User retrieved successfully');
     } catch (error) {
       return ResponseHandler.error(reply, error as Error);
     }
   }
 
-  static async getMany(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  static async getMany(
+    request: FastifyRequest<{ Querystring: GetUsersQuery }>,
+    reply: FastifyReply
+  ): Promise<FastifyReply> {
     try {
       // Validate query parameters
       const { error, value } = getUsersQuerySchema.validate(request.query);
@@ -97,7 +113,10 @@ export class UserController {
     }
   }
 
-  static async update(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  static async update(
+    request: FastifyRequest<{ Params: UserIdParams; Body: UpdateUserInput }>,
+    reply: FastifyReply
+  ): Promise<FastifyReply> {
     try {
       // Validate request params
       const { error: paramError, value: paramValue } = userIdParamSchema.validate(request.params);
@@ -117,20 +136,23 @@ export class UserController {
         });
       }
 
-      const { id } = paramValue as { id: number };
+      const { id } = paramValue as UserIdParams;
       const input = bodyValue as UpdateUserInput;
 
       const user = await UserService.update(id, input);
 
       loggers.http.info({ userId: id, updates: input }, 'User updated via API');
 
-      return ResponseHandler.success(reply, user, 'User updated successfully');
+      return ResponseHandler.ok(reply, user, 'User updated successfully');
     } catch (error) {
       return ResponseHandler.error(reply, error as Error);
     }
   }
 
-  static async delete(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  static async delete(
+    request: FastifyRequest<{ Params: UserIdParams }>,
+    reply: FastifyReply
+  ): Promise<FastifyReply> {
     try {
       // Validate request params
       const { error, value } = userIdParamSchema.validate(request.params);
@@ -141,7 +163,7 @@ export class UserController {
         });
       }
 
-      const { id } = value as { id: number };
+      const { id } = value as UserIdParams;
       await UserService.delete(id);
 
       loggers.http.info({ userId: id }, 'User deleted via API');

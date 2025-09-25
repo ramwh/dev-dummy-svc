@@ -77,7 +77,7 @@ export class UserService {
         return null;
       }
 
-      const user = this.mapRowToUser(rows[0]);
+      const user = this.mapRowToUser(rows[0]!);
 
       // Cache the user
       await this.cacheUser(user);
@@ -103,7 +103,7 @@ export class UserService {
         return null;
       }
 
-      const row = rows[0];
+      const row = rows[0]!;
       return this.mapRowToUser(row);
     } catch (error) {
       loggers.user.error({ email, error }, 'Failed to find user by email');
